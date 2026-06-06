@@ -98,6 +98,5 @@ App runs at `http://localhost:5173`.
 
 ## 👤 Author
 
-**<Your Name>** — _<portfolio / LinkedIn / email>_
+**Kurt Laurence P. Carcueva** — _<kurtcarcueva-portfolio.vercel.app / www.linkedin.com/ in/kurt-carcueva-b51650362 / kl.carcueva05@gmail.com>_
 
-Built as a portfolio project to demonstrate full-stack development with an AI integration.
