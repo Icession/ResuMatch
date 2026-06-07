@@ -1,5 +1,6 @@
 """Pydantic models for request and response bodies."""
 from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
 
 class AnalyzeRequest(BaseModel):
@@ -23,3 +24,12 @@ class AnalyzeResponse(BaseModel):
         default_factory=list, description="Rewrite suggestions for weak bullets."
     )
     summary: str = Field(..., description="One-paragraph overall assessment.")
+    
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=8, max_length=72)
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"

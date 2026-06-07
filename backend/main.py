@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.db import create_db_and_tables
+from app.routers import analyze, auth
 
 from app.routers import analyze
 
@@ -29,6 +30,7 @@ app.add_middleware(
 )
 
 app.include_router(analyze.router)
+app.include_router(auth.router)
 
 
 @app.get("/")
