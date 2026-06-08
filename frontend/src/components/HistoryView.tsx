@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { getHistory } from "../api";
+import { deleteHistoryItem, getHistory } from "../api";
 import type { AnalysisRecord } from "../types";
+import ConfirmDialog from "./ConfirmDialog";
 
 interface Props {
   isOpen: boolean;
@@ -11,6 +12,8 @@ export default function HistoryView({ isOpen, onClose }: Props) {
   const [items, setItems] = useState<AnalysisRecord[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -24,11 +27,29 @@ export default function HistoryView({ isOpen, onClose }: Props) {
       .finally(() => setLoading(false));
   }, [isOpen]);
 
+  async function confirmDelete() {
+    if (pendingDeleteId === null) return;
+    setDeleting(true);
+    try {
+      await deleteHistoryItem(pendingDeleteId);
+      setItems((current) =>
+        current ? current.filter((it) => it.id !== pendingDeleteId) : current
+      );
+      setPendingDeleteId(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't delete this analysis.");
+      setPendingDeleteId(null);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/40 px-4 py-10"
+    <>
+      <div
+        className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/40 px-4 py-10"
       onClick={onClose}
     >
       <div
@@ -63,16 +84,24 @@ export default function HistoryView({ isOpen, onClose }: Props) {
                 key={item.id}
                 className="rounded-xl border border-line bg-white p-5"
               >
-                <div className="flex items-baseline justify-between">
+                <div className="flex items-start justify-between">
                   <span className="font-display text-2xl font-semibold text-forest">
                     {item.match_score}
                     <span className="ml-1 text-xs uppercase tracking-wider text-muted">
                       match
                     </span>
                   </span>
-                  <span className="text-xs text-muted">
-                    {new Date(item.created_at).toLocaleString()}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-muted">
+                      {new Date(item.created_at).toLocaleString()}
+                    </span>
+                    <button
+                      onClick={() => setPendingDeleteId(item.id)}
+                      className="text-xs text-muted hover:text-red-600"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
                 <p className="mt-3 line-clamp-2 text-sm text-muted">
                   {item.job_description}
@@ -96,5 +125,16 @@ export default function HistoryView({ isOpen, onClose }: Props) {
         )}
       </div>
     </div>
+
+      <ConfirmDialog
+        open={pendingDeleteId !== null}
+        title="Delete this analysis?"
+        message="This permanently removes this saved analysis. This can't be undone."
+        confirmLabel="Delete"
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDeleteId(null)}
+      />
+    </>
   );
 }

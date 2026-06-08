@@ -4,7 +4,7 @@ from sqlmodel import Session, select
 
 from app.db import get_session
 from app.deps import get_current_user
-from app.models import User
+from app.models import Analysis, Profile, User
 from app.schemas import Token, UserCreate, UserRead
 from app.services.auth import create_access_token, hash_password, verify_password
 
@@ -40,3 +40,25 @@ def login(data: UserCreate, session: Session = Depends(get_session)):
 @router.get("/me", response_model=UserRead)
 def me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+def delete_account(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+) -> None:
+    """Permanently delete the user's analyses, profile, and account."""
+    analyses = session.exec(
+        select(Analysis).where(Analysis.user_id == current_user.id)
+    ).all()
+    for analysis in analyses:
+        session.delete(analysis)
+
+    profile = session.exec(
+        select(Profile).where(Profile.user_id == current_user.id)
+    ).first()
+    if profile is not None:
+        session.delete(profile)
+
+    session.delete(current_user)
+    session.commit()

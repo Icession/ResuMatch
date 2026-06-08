@@ -4,7 +4,8 @@ import ResultsView from "./components/ResultsView";
 import CoverLetterPanel from "./components/CoverLetterPanel";
 import AuthModal from "./components/AuthModal";
 import HistoryView from "./components/HistoryView";
-import { analyzeResume, analyzeResumeFile } from "./api";
+import ConfirmDialog from "./components/ConfirmDialog";
+import { analyzeResume, analyzeResumeFile, deleteAccount } from "./api";
 import { useAuth } from "./AuthContext";
 import type { AnalyzeResponse } from "./types";
 
@@ -23,6 +24,8 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalyzeResponse | null>(null);
   const [lastInputs, setLastInputs] = useState<LastInputs | null>(null);
+  const [confirmAccountOpen, setConfirmAccountOpen] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   async function handleSubmit(
     resumeText: string,
@@ -41,6 +44,20 @@ export default function App() {
       setError(e instanceof Error ? e.message : "Something went wrong.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function confirmDeleteAccount() {
+    setDeletingAccount(true);
+    try {
+      await deleteAccount();
+      setConfirmAccountOpen(false);
+      logout();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't delete your account.");
+      setConfirmAccountOpen(false);
+    } finally {
+      setDeletingAccount(false);
     }
   }
 
@@ -64,6 +81,12 @@ export default function App() {
                 className="rounded-lg border border-line px-3 py-1.5 font-medium hover:border-forest hover:text-forest"
               >
                 Log out
+              </button>
+              <button
+                onClick={() => setConfirmAccountOpen(true)}
+                className="text-xs text-muted hover:text-red-600"
+              >
+                Delete account
               </button>
             </>
           ) : (
@@ -115,6 +138,15 @@ export default function App() {
 
         <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
         <HistoryView isOpen={historyOpen} onClose={() => setHistoryOpen(false)} />
+        <ConfirmDialog
+          open={confirmAccountOpen}
+          title="Delete your account?"
+          message="This permanently deletes your account, saved analyses, and profile. This cannot be undone."
+          confirmLabel="Delete account"
+          loading={deletingAccount}
+          onConfirm={confirmDeleteAccount}
+          onCancel={() => setConfirmAccountOpen(false)}
+        />
       </main>
     </>
   );

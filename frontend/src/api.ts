@@ -191,3 +191,19 @@ export async function saveProfile(profile: Profile): Promise<Profile> {
   if (!res.ok) throw new Error(await parseError(res));
   return res.json();
 }
+
+export async function deleteHistoryItem(id: number): Promise<void> {
+  const res = await fetch(`${API_URL}/history/${id}`, {
+    method: "DELETE",
+    headers: { ...authHeaders() },
+  });
+  if (!res.ok) throw new Error(await parseError(res));
+}
+
+export async function deleteAccount(): Promise<void> {
+  const res = await fetch(`${API_URL}/auth/me`, {
+    method: "DELETE",
+    headers: { ...authHeaders() },
+  });
+  if (!res.ok) throw new Error(await parseError(res));
+}

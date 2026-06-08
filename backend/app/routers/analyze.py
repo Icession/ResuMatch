@@ -63,6 +63,21 @@ def history(
     ).all()
 
 
+@router.delete("/history/{analysis_id}", status_code=204, tags=["history"])
+def delete_history_item(
+    analysis_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+) -> None:
+    """Delete one of the logged-in user's saved analyses."""
+    analysis = session.get(Analysis, analysis_id)
+    # 404 (not 403) when it isn't theirs, so we don't reveal that the id exists.
+    if analysis is None or analysis.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Analysis not found.")
+    session.delete(analysis)
+    session.commit()
+
+
 @router.post("/cover-letter", response_model=CoverLetterResponse, tags=["cover-letter"])
 def cover_letter(payload: CoverLetterRequest) -> CoverLetterResponse:
     """Generate a tailored cover letter from pasted resume text + job description."""
